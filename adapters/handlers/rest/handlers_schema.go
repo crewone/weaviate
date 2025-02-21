@@ -217,6 +217,20 @@ func (s *schemaHandlers) updateShardStatus(params schema.SchemaObjectsShardsUpda
 	return schema.NewSchemaObjectsShardsUpdateOK().WithPayload(payload)
 }
 
+func (s *schemaHandlers) copyShard(params schema.SchemaObjectsCopyshardParams,
+	principal *models.Principal,
+) middleware.Responder {
+	ctx := restCtx.AddPrincipalToContext(params.HTTPRequest.Context(), principal)
+	_, err := s.manager.CopyShard(ctx, principal, params.ClassName, params.ShardName, params.SourceNode, params.TargetNode)
+	if err != nil {
+		s.metricRequestsTotal.logError(params.ClassName, err)
+		return schema.NewSchemaObjectsCopyshardUnprocessableEntity().
+			WithPayload(errPayloadFromSingleErr(err))
+	}
+
+	return schema.NewSchemaObjectsCopyshardOK()
+}
+
 func (s *schemaHandlers) createTenants(params schema.TenantsCreateParams,
 	principal *models.Principal,
 ) middleware.Responder {

@@ -60,6 +60,11 @@ func (f *fakeSchemaManager) UpdateShardStatus(c_ context.Context, class, shard, 
 	return 0, args.Error(0)
 }
 
+func (f *fakeSchemaManager) CopyShard(ctx context.Context, class string, req *command.CopyShardRequest) (uint64, error) {
+	args := f.Called(req)
+	return 0, args.Error(0)
+}
+
 func (f *fakeSchemaManager) AddTenants(_ context.Context, class string, req *command.AddTenantsRequest) (uint64, error) {
 	args := f.Called(class, req)
 	return 0, args.Error(0)

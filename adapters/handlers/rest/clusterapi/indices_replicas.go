@@ -27,10 +27,10 @@ import (
 
 	enterrors "github.com/weaviate/weaviate/entities/errors"
 	"github.com/weaviate/weaviate/entities/storobj"
+	"github.com/weaviate/weaviate/usecases/mydist"
 	"github.com/weaviate/weaviate/usecases/objects"
 	"github.com/weaviate/weaviate/usecases/replica"
 	"github.com/weaviate/weaviate/usecases/replica/hashtree"
-	"github.com/weaviate/weaviate/usecases/scaler"
 )
 
 type replicator interface {
@@ -66,7 +66,7 @@ type replicator interface {
 
 type localScaler interface {
 	LocalScaleOut(ctx context.Context, className string,
-		dist scaler.ShardDist) error
+		dist mydist.ShardDist) error
 }
 
 type replicatedIndices struct {

@@ -35,9 +35,9 @@ import (
 	"github.com/weaviate/weaviate/entities/search"
 	"github.com/weaviate/weaviate/entities/searchparams"
 	"github.com/weaviate/weaviate/entities/storobj"
+	"github.com/weaviate/weaviate/usecases/mydist"
 	"github.com/weaviate/weaviate/usecases/objects"
 	"github.com/weaviate/weaviate/usecases/replica"
-	"github.com/weaviate/weaviate/usecases/scaler"
 )
 
 type RemoteIndex struct {
@@ -812,7 +812,7 @@ func (c *RemoteIndex) ReInitShard(ctx context.Context,
 }
 
 func (c *RemoteIndex) IncreaseReplicationFactor(ctx context.Context,
-	hostName, indexName string, dist scaler.ShardDist,
+	hostName, indexName string, dist mydist.ShardDist,
 ) error {
 	path := fmt.Sprintf("/replicas/indices/%s/replication-factor:increase", indexName)
 

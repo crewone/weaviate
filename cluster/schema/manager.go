@@ -388,6 +388,22 @@ func (s *SchemaManager) UpdateTenantsProcess(cmd *command.ApplyRequest, schemaOn
 	)
 }
 
+func (s *SchemaManager) CopyShard(cmd *command.ApplyRequest, schemaOnly bool) error {
+	req := &command.CopyShardRequest{}
+	if err := gproto.Unmarshal(cmd.SubCommand, req); err != nil {
+		return fmt.Errorf("%w: %w", ErrBadRequest, err)
+	}
+
+	return s.apply(
+		applyOp{
+			op:           cmd.GetType().String(),
+			updateSchema: func() error { return s.schema.copyShard(cmd.Class, cmd.Version, req) },
+			updateStore:  func() error { return s.db.CopyShard(cmd.Class, req.ShardName, req.SourceNode, req.TargetNode) },
+			schemaOnly:   schemaOnly,
+		},
+	)
+}
+
 type applyOp struct {
 	op                   string
 	updateSchema         func() error

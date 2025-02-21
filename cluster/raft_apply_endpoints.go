@@ -188,6 +188,22 @@ func (s *Raft) UpdateTenantsProcess(ctx context.Context, class string, req *cmd.
 	return s.Execute(ctx, command)
 }
 
+func (s *Raft) CopyShard(ctx context.Context, class string, req *cmd.CopyShardRequest) (uint64, error) {
+	if class == "" || req == nil {
+		return 0, fmt.Errorf("empty class name or nil request : %w", schema.ErrBadRequest)
+	}
+	subCommand, err := proto.Marshal(req)
+	if err != nil {
+		return 0, fmt.Errorf("marshal request: %w", err)
+	}
+	command := &cmd.ApplyRequest{
+		Type:       cmd.ApplyRequest_TYPE_COPY_SHARD,
+		Class:      class,
+		SubCommand: subCommand,
+	}
+	return s.Execute(ctx, command)
+}
+
 func (s *Raft) StoreSchemaV1() error {
 	command := &cmd.ApplyRequest{
 		Type: cmd.ApplyRequest_TYPE_STORE_SCHEMA_V1,

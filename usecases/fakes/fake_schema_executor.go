@@ -77,6 +77,11 @@ func (m *MockSchemaExecutor) UpdateTenantsProcess(class string, req *cmd.TenantP
 	return args.Error(0)
 }
 
+func (m *MockSchemaExecutor) CopyShard(class string, shardName, sourceNode, targetNode string) error {
+	args := m.Called(class, shardName, sourceNode, targetNode)
+	return args.Error(0)
+}
+
 func (m *MockSchemaExecutor) DeleteTenants(class string, tenants []*models.Tenant) error {
 	args := m.Called(class, tenants)
 	return args.Error(0)

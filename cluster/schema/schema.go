@@ -465,6 +465,30 @@ func (s *schema) updateTenantsProcess(class string, v uint64, req *command.Tenan
 	return err
 }
 
+func (s *schema) copyShard(class string, v uint64, req *command.CopyShardRequest) error {
+	ok, meta, _, err := s.multiTenancyEnabled(class)
+	if !ok {
+		return err
+	}
+
+	if s.nodeID == req.SourceNode {
+		// TODO copy logic from Scaler.scaleOut?
+		ssCopy := meta.Sharding.DeepCopy()
+		physical, ok := ssCopy.Physical[req.ShardName]
+		if !ok {
+			return fmt.Errorf("shard %q not found", req.ShardName)
+		}
+		// TODO simulate multistep with sleep for now?
+		physical.BelongsToNodes = append(physical.BelongsToNodes, req.TargetNode)
+	}
+	if s.nodeID == req.TargetNode {
+		// TODO
+	}
+	// TODO
+
+	return nil
+}
+
 func (s *schema) getTenants(class string, tenants []string) ([]*models.TenantResponse, error) {
 	ok, meta, _, err := s.multiTenancyEnabled(class)
 	if !ok {

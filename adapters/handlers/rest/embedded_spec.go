@@ -3545,6 +3545,68 @@ func init() {
         ]
       }
     },
+    "/schema/{className}/copyshard": {
+      "post": {
+        "description": "Copy a shard from one node to another",
+        "tags": [
+          "schema"
+        ],
+        "summary": "Copy a shard from one node to another TODO real name/etc",
+        "operationId": "schema.objects.copyshard",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "className",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "shardName",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "sourceNode",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "targetNode",
+            "in": "query",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Shard was copied successfully"
+          },
+          "401": {
+            "description": "Unauthorized or invalid credentials."
+          },
+          "403": {
+            "description": "Forbidden",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "422": {
+            "description": "Invalid request",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "500": {
+            "description": "An error has occurred while trying to fulfill the request. Most likely the ErrorResponse will contain more information about the error.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        }
+      }
+    },
     "/schema/{className}/properties": {
       "post": {
         "tags": [
@@ -10297,6 +10359,68 @@ func init() {
         "x-serviceIds": [
           "weaviate.local.manipulate.meta"
         ]
+      }
+    },
+    "/schema/{className}/copyshard": {
+      "post": {
+        "description": "Copy a shard from one node to another",
+        "tags": [
+          "schema"
+        ],
+        "summary": "Copy a shard from one node to another TODO real name/etc",
+        "operationId": "schema.objects.copyshard",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "className",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "shardName",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "sourceNode",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "targetNode",
+            "in": "query",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Shard was copied successfully"
+          },
+          "401": {
+            "description": "Unauthorized or invalid credentials."
+          },
+          "403": {
+            "description": "Forbidden",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "422": {
+            "description": "Invalid request",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "500": {
+            "description": "An error has occurred while trying to fulfill the request. Most likely the ErrorResponse will contain more information about the error.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        }
       }
     },
     "/schema/{className}/properties": {

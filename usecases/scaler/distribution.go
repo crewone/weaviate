@@ -15,20 +15,21 @@ import (
 	"fmt"
 
 	"github.com/weaviate/weaviate/usecases/cluster"
+	"github.com/weaviate/weaviate/usecases/mydist"
 	"github.com/weaviate/weaviate/usecases/sharding"
 )
 
 type (
 	// ShardDist shard distribution over nodes
-	ShardDist map[string][]string
+	// ShardDist map[string][]string
 	// nodeShardDist map a node its shard distribution
-	nodeShardDist map[string]ShardDist
+	nodeShardDist map[string]mydist.ShardDist
 )
 
 // distributions returns shard distribution for local node as well as remote nodes
-func distributions(before, after *sharding.State) (ShardDist, nodeShardDist) {
-	localDist := make(ShardDist, len(before.Physical))
-	nodeDist := make(map[string]ShardDist)
+func distributions(before, after *sharding.State) (mydist.ShardDist, nodeShardDist) {
+	localDist := make(mydist.ShardDist, len(before.Physical))
+	nodeDist := make(map[string]mydist.ShardDist)
 	for name := range before.Physical {
 		newNodes := difference(after.Physical[name].BelongsToNodes, before.Physical[name].BelongsToNodes)
 		if before.IsLocalShard(name) {
@@ -66,15 +67,6 @@ func hosts(nodes []string, resolver cluster.NodeSelector) ([]string, error) {
 		hs[i] = host
 	}
 	return hs, nil
-}
-
-// shards return names of all shards
-func (m ShardDist) shards() []string {
-	ns := make([]string, 0, len(m))
-	for node := range m {
-		ns = append(ns, node)
-	}
-	return ns
 }
 
 // difference returns elements in xs which doesn't exists in ys

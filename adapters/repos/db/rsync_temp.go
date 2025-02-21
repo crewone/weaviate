@@ -9,7 +9,7 @@
 //  CONTACT: hello@weaviate.io
 //
 
-package scaler
+package db
 
 import (
 	"context"
@@ -19,11 +19,9 @@ import (
 	"path/filepath"
 
 	"github.com/sirupsen/logrus"
-	enterrors "github.com/weaviate/weaviate/entities/errors"
-	"github.com/weaviate/weaviate/usecases/cluster"
-	"github.com/weaviate/weaviate/usecases/mydist"
-
 	"github.com/weaviate/weaviate/entities/backup"
+	enterrors "github.com/weaviate/weaviate/entities/errors"
+	"github.com/weaviate/weaviate/usecases/mydist"
 )
 
 // client the client interface is used to communicate with remote nodes
@@ -47,11 +45,11 @@ type client interface {
 // rsync synchronizes shards with remote nodes
 type rsync struct {
 	client          client
-	cluster         cluster.NodeSelector
+	cluster         nodeResolver
 	persistenceRoot string
 }
 
-func newRSync(c client, cl cluster.NodeSelector, rootPath string) *rsync {
+func newRSync(c client, cl nodeResolver, rootPath string) *rsync {
 	return &rsync{client: c, cluster: cl, persistenceRoot: rootPath}
 }
 
@@ -77,7 +75,7 @@ func (r *rsync) PushShard(ctx context.Context, className string, desc *backup.Sh
 	for _, node := range nodes {
 		host, ok := r.cluster.NodeHostname(node)
 		if !ok {
-			return fmt.Errorf("%w: %q", ErrUnresolvedName, node)
+			return fmt.Errorf("%w: %q", "unresolved name", node)
 		}
 		if err := r.client.CreateShard(ctx, host, className, desc.Name); err != nil {
 			return fmt.Errorf("create new shard on remote node %q: %w", node, err)

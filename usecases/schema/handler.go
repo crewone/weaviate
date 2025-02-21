@@ -47,6 +47,7 @@ type SchemaManager interface {
 	DeleteClass(ctx context.Context, name string) (uint64, error)
 	AddProperty(ctx context.Context, class string, p ...*models.Property) (uint64, error)
 	UpdateShardStatus(ctx context.Context, class, shard, status string) (uint64, error)
+	CopyShard(ctx context.Context, class string, req *command.CopyShardRequest) (uint64, error)
 	AddTenants(ctx context.Context, class string, req *command.AddTenantsRequest) (uint64, error)
 	UpdateTenants(ctx context.Context, class string, req *command.UpdateTenantsRequest) (uint64, error)
 	DeleteTenants(ctx context.Context, class string, req *command.DeleteTenantsRequest) (uint64, error)
@@ -232,6 +233,17 @@ func (h *Handler) UpdateShardStatus(ctx context.Context,
 	}
 
 	return h.schemaManager.UpdateShardStatus(ctx, class, shard, status)
+}
+
+func (h *Handler) CopyShard(ctx context.Context,
+	principal *models.Principal, class, shard, sourceNode, targetNode string,
+) (uint64, error) {
+	// skip auth for testing
+	return h.schemaManager.CopyShard(ctx, class, &command.CopyShardRequest{
+		ShardName:  shard,
+		SourceNode: sourceNode,
+		TargetNode: targetNode,
+	})
 }
 
 func (h *Handler) ShardsStatus(ctx context.Context,

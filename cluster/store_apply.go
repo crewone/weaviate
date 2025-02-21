@@ -189,6 +189,11 @@ func (st *Store) Apply(l *raft.Log) interface{} {
 			ret.Error = st.schemaManager.UpdateTenantsProcess(&cmd, schemaOnly)
 		}
 
+	case api.ApplyRequest_TYPE_COPY_SHARD:
+		f = func() {
+			ret.Error = st.schemaManager.CopyShard(&cmd, schemaOnly)
+		}
+
 	case api.ApplyRequest_TYPE_STORE_SCHEMA_V1:
 		f = func() {
 			ret.Error = st.StoreSchemaV1()

@@ -187,8 +187,8 @@ case $CONFIG in
       CLUSTER_DATA_BIND_PORT="7101" \
       PROMETHEUS_MONITORING_ENABLED=true \
       PROMETHEUS_MONITORING_PORT="${PROMETHEUS_MONITORING_PORT}" \
-      RAFT_JOIN="weaviate-0:8300,weaviate-1:8302,weaviate-2:8304" \
-      RAFT_BOOTSTRAP_EXPECT=3 \
+      RAFT_JOIN="weaviate-0:8300,weaviate-1:8302" \
+      RAFT_BOOTSTRAP_EXPECT=2 \
       go_run ./cmd/weaviate-server \
         --scheme http \
         --host "127.0.0.1" \
@@ -212,8 +212,8 @@ case $CONFIG in
       PROMETHEUS_MONITORING_ENABLED=true \
       RAFT_PORT="8302" \
       RAFT_INTERNAL_RPC_PORT="8303" \
-      RAFT_JOIN="weaviate-0:8300,weaviate-1:8302,weaviate-2:8304" \
-      RAFT_BOOTSTRAP_EXPECT=3 \
+      RAFT_JOIN="weaviate-0:8300,weaviate-1:8302" \
+      RAFT_BOOTSTRAP_EXPECT=2 \
       DEFAULT_VECTORIZER_MODULE=text2vec-contextionary \
       ENABLE_MODULES="text2vec-contextionary,backup-filesystem" \
       go_run ./cmd/weaviate-server \

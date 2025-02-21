@@ -225,6 +225,9 @@ func NewWeaviateAPI(spec *loads.Document) *WeaviateAPI {
 		SchemaSchemaDumpHandler: schema.SchemaDumpHandlerFunc(func(params schema.SchemaDumpParams, principal *models.Principal) middleware.Responder {
 			return middleware.NotImplemented("operation schema.SchemaDump has not yet been implemented")
 		}),
+		SchemaSchemaObjectsCopyshardHandler: schema.SchemaObjectsCopyshardHandlerFunc(func(params schema.SchemaObjectsCopyshardParams, principal *models.Principal) middleware.Responder {
+			return middleware.NotImplemented("operation schema.SchemaObjectsCopyshard has not yet been implemented")
+		}),
 		SchemaSchemaObjectsCreateHandler: schema.SchemaObjectsCreateHandlerFunc(func(params schema.SchemaObjectsCreateParams, principal *models.Principal) middleware.Responder {
 			return middleware.NotImplemented("operation schema.SchemaObjectsCreate has not yet been implemented")
 		}),
@@ -444,6 +447,8 @@ type WeaviateAPI struct {
 	AuthzRevokeRoleFromUserHandler authz.RevokeRoleFromUserHandler
 	// SchemaSchemaDumpHandler sets the operation handler for the schema dump operation
 	SchemaSchemaDumpHandler schema.SchemaDumpHandler
+	// SchemaSchemaObjectsCopyshardHandler sets the operation handler for the schema objects copyshard operation
+	SchemaSchemaObjectsCopyshardHandler schema.SchemaObjectsCopyshardHandler
 	// SchemaSchemaObjectsCreateHandler sets the operation handler for the schema objects create operation
 	SchemaSchemaObjectsCreateHandler schema.SchemaObjectsCreateHandler
 	// SchemaSchemaObjectsDeleteHandler sets the operation handler for the schema objects delete operation
@@ -715,6 +720,9 @@ func (o *WeaviateAPI) Validate() error {
 	}
 	if o.SchemaSchemaDumpHandler == nil {
 		unregistered = append(unregistered, "schema.SchemaDumpHandler")
+	}
+	if o.SchemaSchemaObjectsCopyshardHandler == nil {
+		unregistered = append(unregistered, "schema.SchemaObjectsCopyshardHandler")
 	}
 	if o.SchemaSchemaObjectsCreateHandler == nil {
 		unregistered = append(unregistered, "schema.SchemaObjectsCreateHandler")
@@ -1072,6 +1080,10 @@ func (o *WeaviateAPI) initHandlerCache() {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}
 	o.handlers["GET"]["/schema"] = schema.NewSchemaDump(o.context, o.SchemaSchemaDumpHandler)
+	if o.handlers["POST"] == nil {
+		o.handlers["POST"] = make(map[string]http.Handler)
+	}
+	o.handlers["POST"]["/schema/{className}/copyshard"] = schema.NewSchemaObjectsCopyshard(o.context, o.SchemaSchemaObjectsCopyshardHandler)
 	if o.handlers["POST"] == nil {
 		o.handlers["POST"] = make(map[string]http.Handler)
 	}

@@ -253,6 +253,10 @@ func (e *executor) UpdateTenantsProcess(class string, req *api.TenantProcessRequ
 	return nil
 }
 
+func (e *executor) CopyShard(class string, shardName, sourceNode, targetNode string) error {
+	return e.migrator.CopyShard(context.Background(), class, shardName, sourceNode, targetNode)
+}
+
 func (e *executor) DeleteTenants(class string, tenants []*models.Tenant) error {
 	ctx := context.Background()
 	if err := e.migrator.DeleteTenants(ctx, class, tenants); err != nil {

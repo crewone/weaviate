@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
@@ -35,6 +36,7 @@ import (
 	"github.com/weaviate/weaviate/entities/storobj"
 	esync "github.com/weaviate/weaviate/entities/sync"
 	"github.com/weaviate/weaviate/entities/vectorindex"
+	"github.com/weaviate/weaviate/usecases/mydist"
 	"github.com/weaviate/weaviate/usecases/replica"
 	schemaUC "github.com/weaviate/weaviate/usecases/schema"
 	"github.com/weaviate/weaviate/usecases/sharding"
@@ -404,6 +406,32 @@ func (m *Migrator) NewTenants(ctx context.Context, class *models.Class, creates 
 		ec.Add(err)
 	}
 	return ec.ToError()
+}
+
+func (m *Migrator) NodeID(ctx context.Context) string {
+	return m.nodeId
+}
+
+// NOTE copied from usecases/scaler
+func (m *Migrator) CopyShard(ctx context.Context, class string, shardName, sourceNode, targetNode string) error {
+	bakID := fmt.Sprintf("_internal_scaler_%s", uuid.New().String()) // todo better name
+	bak, err := m.db.ShardsBackup(ctx, bakID, class, []string{shardName})
+	if err != nil {
+		return fmt.Errorf("create snapshot: %w", err)
+	}
+
+	defer func() {
+		err := m.db.ReleaseBackup(context.Background(), bakID, class)
+		if err != nil {
+			m.logger.WithField("scaler", "releaseBackup").WithField("class", class).Error(err)
+		}
+	}()
+	rsync := newRSync(m.db.remoteIndex, m.db.nodeResolver, m.db.config.RootPath)
+	dist := mydist.ShardDist{
+		// TODO is targetNode right?
+		shardName: []string{targetNode},
+	}
+	return rsync.Push(ctx, bak.Shards, dist, class, m.logger)
 }
 
 // UpdateTenants activates or deactivates tenant partitions and returns a commit func

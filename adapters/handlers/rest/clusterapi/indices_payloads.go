@@ -25,6 +25,7 @@ import (
 	"github.com/weaviate/weaviate/entities/models"
 
 	"github.com/weaviate/weaviate/usecases/byteops"
+	"github.com/weaviate/weaviate/usecases/mydist"
 
 	"github.com/go-openapi/strfmt"
 	"github.com/pkg/errors"
@@ -35,7 +36,6 @@ import (
 	"github.com/weaviate/weaviate/entities/searchparams"
 	"github.com/weaviate/weaviate/entities/storobj"
 	"github.com/weaviate/weaviate/usecases/objects"
-	"github.com/weaviate/weaviate/usecases/scaler"
 )
 
 var IndicesPayloads = indicesPayloads{}
@@ -69,18 +69,18 @@ type indicesPayloads struct {
 
 type increaseReplicationFactorPayload struct{}
 
-func (p increaseReplicationFactorPayload) Marshall(dist scaler.ShardDist) ([]byte, error) {
+func (p increaseReplicationFactorPayload) Marshall(dist mydist.ShardDist) ([]byte, error) {
 	type payload struct {
-		ShardDist scaler.ShardDist `json:"shard_distribution"`
+		ShardDist mydist.ShardDist `json:"shard_distribution"`
 	}
 
 	pay := payload{ShardDist: dist}
 	return json.Marshal(pay)
 }
 
-func (p increaseReplicationFactorPayload) Unmarshal(in []byte) (scaler.ShardDist, error) {
+func (p increaseReplicationFactorPayload) Unmarshal(in []byte) (mydist.ShardDist, error) {
 	type payload struct {
-		ShardDist scaler.ShardDist `json:"shard_distribution"`
+		ShardDist mydist.ShardDist `json:"shard_distribution"`
 	}
 
 	pay := payload{}

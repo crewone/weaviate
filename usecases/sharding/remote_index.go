@@ -33,6 +33,7 @@ import (
 	"github.com/weaviate/weaviate/entities/search"
 	"github.com/weaviate/weaviate/entities/searchparams"
 	"github.com/weaviate/weaviate/entities/storobj"
+	"github.com/weaviate/weaviate/usecases/mydist"
 	"github.com/weaviate/weaviate/usecases/objects"
 )
 
@@ -102,6 +103,9 @@ type RemoteIndexClient interface {
 
 	PutFile(ctx context.Context, hostName, indexName, shardName, fileName string,
 		payload io.ReadSeekCloser) error
+	CreateShard(ctx context.Context, hostName, indexName, shardName string) error
+	IncreaseReplicationFactor(ctx context.Context, hostName, indexName string, dist mydist.ShardDist) error
+	ReInitShard(ctx context.Context, hostName, indexName, shardName string) error
 }
 
 func (ri *RemoteIndex) PutObject(ctx context.Context, shardName string,

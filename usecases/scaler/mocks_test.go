@@ -22,6 +22,7 @@ import (
 	"github.com/weaviate/weaviate/entities/backup"
 	"github.com/weaviate/weaviate/usecases/cluster"
 	"github.com/weaviate/weaviate/usecases/cluster/mocks"
+	"github.com/weaviate/weaviate/usecases/mydist"
 	"github.com/weaviate/weaviate/usecases/sharding"
 )
 
@@ -155,7 +156,7 @@ func (f *fakeClient) ReInitShard(ctx context.Context, host, class, shard string,
 }
 
 func (f *fakeClient) IncreaseReplicationFactor(ctx context.Context,
-	host, class string, dist ShardDist,
+	host, class string, dist mydist.ShardDist,
 ) error {
 	args := f.Called(ctx, host, class, dist)
 	return args.Error(0)

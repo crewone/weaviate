@@ -53,6 +53,7 @@ message ApplyRequest {
     TYPE_DELETE_TENANT = 18;
     TYPE_TENANT_PROCESS = 19;    
 
+    TYPE_COPY_SHARD = 20;
 
     TYPE_UPSERT_ROLES_PERMISSIONS = 60;
     TYPE_DELETE_ROLES = 61;
@@ -138,4 +139,11 @@ message DeleteTenantsRequest {
 message Tenant {
   string name = 1;
   string status = 2;
+}
+
+message CopyShardRequest {
+  string shard_name = 1;
+  string source_node = 2;
+  string target_node = 3;
+  // TODO enum for type of move (eg delete old shard?)
 }

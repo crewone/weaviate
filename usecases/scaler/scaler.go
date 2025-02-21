@@ -23,6 +23,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/weaviate/weaviate/entities/backup"
 	"github.com/weaviate/weaviate/usecases/cluster"
+	"github.com/weaviate/weaviate/usecases/mydist"
 	"github.com/weaviate/weaviate/usecases/sharding"
 	"github.com/weaviate/weaviate/usecases/sharding/config"
 )
@@ -184,14 +185,14 @@ func (s *Scaler) scaleOut(ctx context.Context, className string, ssBefore *shard
 //   - ReInit the shard to recognize the copied files
 //   - Release the single-shard backup
 func (s *Scaler) LocalScaleOut(ctx context.Context,
-	className string, dist ShardDist,
+	className string, dist mydist.ShardDist,
 ) error {
 	if len(dist) < 1 {
 		return nil
 	}
 	// Create backup of the sin
 	bakID := fmt.Sprintf("_internal_scaler_%s", uuid.New().String()) // todo better name
-	bak, err := s.source.ShardsBackup(ctx, bakID, className, dist.shards())
+	bak, err := s.source.ShardsBackup(ctx, bakID, className, dist.Shards())
 	if err != nil {
 		return fmt.Errorf("create snapshot: %w", err)
 	}
