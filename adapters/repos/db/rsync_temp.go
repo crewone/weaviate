@@ -17,6 +17,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/weaviate/weaviate/entities/backup"
@@ -82,17 +83,22 @@ func (r *rsync) PushShard(ctx context.Context, className string, desc *backup.Sh
 		}
 
 		// simulate transferring large files (later have a sleep per file)
-		// fmt.Println("NATEE simulating large files, sleeping for 3 seconds")
-		// time.Sleep(3 * time.Second)
-		// fmt.Println("NATEE done sleeping for simulation of large files")
+		fmt.Println(time.Now().Format("15:04:05.000"), "NATEE simulating large files, sleeping for 3 seconds")
+
+		time.Sleep(2 * time.Second)
+		fmt.Println(time.Now().Format("15:04:05.000"), "NATEE done sleeping for simulation of large files")
 
 		// Transfer each file that's part of the backup.
+		fmt.Println(time.Now().Format("15:04:05.000"), "NATEE transferring files to remote node", node)
 		for _, file := range desc.Files {
+			// NATEE simulate slow transfer for each file
+			time.Sleep(500 * time.Millisecond)
 			err := r.PutFile(ctx, file, host, className, desc.Name)
 			if err != nil {
 				return fmt.Errorf("copy files to remote node %q: %w", node, err)
 			}
 		}
+		fmt.Println(time.Now().Format("15:04:05.000"), "NATEE done transferring files to remote node", node)
 
 		// Transfer shard metadata files
 		err := r.PutFile(ctx, desc.ShardVersionPath, host, className, desc.Name)

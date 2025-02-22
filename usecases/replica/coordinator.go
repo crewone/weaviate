@@ -185,7 +185,7 @@ func (c *coordinator[T]) Push(ctx context.Context,
 	for name, _ := range state.NodeMap {
 		names = append(names, name)
 	}
-	fmt.Println("NATEE coordinator Push", names)
+	fmt.Println(time.Now().Format("15:04:05.000"), "NATEE coordinator Push", names)
 	if err != nil {
 		return nil, 0, fmt.Errorf("%w : class %q shard %q", err, c.Class, c.Shard)
 	}

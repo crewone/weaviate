@@ -17,6 +17,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/hashicorp/raft"
 	"github.com/prometheus/client_golang/prometheus"
@@ -393,7 +394,7 @@ func (s *SchemaManager) CopyShard(cmd *command.ApplyRequest, schemaOnly bool) er
 	if err := gproto.Unmarshal(cmd.SubCommand, req); err != nil {
 		return fmt.Errorf("%w: %w", ErrBadRequest, err)
 	}
-	fmt.Println("NATEE schemaManager copyShard", schemaOnly)
+	fmt.Println(time.Now().Format("15:04:05.000"), "NATEE schemaManager copyShard", schemaOnly)
 	return s.apply(
 		applyOp{
 			op:           cmd.GetType().String(),

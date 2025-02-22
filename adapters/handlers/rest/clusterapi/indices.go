@@ -1299,6 +1299,7 @@ func (i *indices) postShardFile() http.Handler {
 			return
 		}
 
+		fmt.Println(time.Now().Format("15:04:05.000"), "NATEE indices postShardFile", index, shard, filename)
 		fp, err := i.shards.FilePutter(r.Context(), index, shard, filename)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -1332,7 +1333,7 @@ func (i *indices) postShard() http.Handler {
 		}
 
 		index, shard := args[1], args[2]
-
+		fmt.Println(time.Now().Format("15:04:05.000"), "NATEE indices postShard", index, shard)
 		err := i.shards.CreateShard(r.Context(), index, shard)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -1353,6 +1354,7 @@ func (i *indices) putShardReinit() http.Handler {
 
 		index, shard := args[1], args[2]
 
+		fmt.Println(time.Now().Format("15:04:05.000"), "NATEE indices putShardReinit", index, shard)
 		err := i.shards.ReInitShard(r.Context(), index, shard)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

@@ -18,6 +18,7 @@ import (
 	"io"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/hashicorp/raft"
 	"github.com/prometheus/client_golang/prometheus"
@@ -476,15 +477,15 @@ func (s *schema) copyShard(class string, v uint64, req *command.CopyShardRequest
 
 	// TODO replace sleeps with state machine
 	if s.nodeID == req.SourceNode {
-		// fmt.Println("NATEE schema copyShard source node sleeping")
+		// fmt.Println(time.Now().Format("15:04:05.000"), "NATEE schema copyShard source node sleeping")
 		// time.Sleep(1 * time.Second)
-		fmt.Println("NATEE schema copyShard source node")
+		fmt.Println(time.Now().Format("15:04:05.000"), "NATEE schema copyShard source node")
 	}
 	if s.nodeID == req.TargetNode {
 		// TODO enable writes on target node
-		// fmt.Println("NATEE schema copyShard target node sleeping")
+		// fmt.Println(time.Now().Format("15:04:05.000"), "NATEE schema copyShard target node sleeping")
 		// time.Sleep(1 * time.Second)
-		fmt.Println("NATEE schema copyShard target node")
+		fmt.Println(time.Now().Format("15:04:05.000"), "NATEE schema copyShard target node")
 	}
 
 	ssCopy := meta.Sharding.DeepCopy()
@@ -494,10 +495,10 @@ func (s *schema) copyShard(class string, v uint64, req *command.CopyShardRequest
 	}
 	physicalCopy.BelongsToNodes = append(physicalCopy.BelongsToNodes, req.TargetNode)
 	// s.updateClass(class, func(meta *metaClass) error {
-	fmt.Println("NATEE schema copyShard update before", meta.Sharding.Physical[req.ShardName], meta.Class.ReplicationConfig)
+	fmt.Println(time.Now().Format("15:04:05.000"), "NATEE schema copyShard update before", meta.Sharding.Physical[req.ShardName], meta.Class.ReplicationConfig)
 	meta.Sharding.Physical[req.ShardName] = physicalCopy
 	meta.Class.ReplicationConfig.Factor += 1
-	fmt.Println("NATEE schema copyShard update after", meta.Sharding.Physical[req.ShardName], meta.Class.ReplicationConfig)
+	fmt.Println(time.Now().Format("15:04:05.000"), "NATEE schema copyShard update after", meta.Sharding.Physical[req.ShardName], meta.Class.ReplicationConfig)
 	return nil
 	// })
 

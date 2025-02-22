@@ -14,6 +14,7 @@ package rest
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/sirupsen/logrus"
@@ -221,9 +222,9 @@ func (s *schemaHandlers) copyShard(params schema.SchemaObjectsCopyshardParams,
 	principal *models.Principal,
 ) middleware.Responder {
 	ctx := restCtx.AddPrincipalToContext(params.HTTPRequest.Context(), principal)
-	fmt.Println("NATEE schemaHandlers.copyShard", params)
+	fmt.Println(time.Now().Format("15:04:05.000"), "NATEE schemaHandlers.copyShard", params)
 	_, err := s.manager.CopyShard(ctx, principal, params.ClassName, params.ShardName, params.SourceNode, params.TargetNode)
-	fmt.Println("NATEE schemaHandlers.copyShard err?", err)
+	fmt.Println(time.Now().Format("15:04:05.000"), "NATEE schemaHandlers.copyShard err?", err)
 	if err != nil {
 		s.metricRequestsTotal.logError(params.ClassName, err)
 		return schema.NewSchemaObjectsCopyshardUnprocessableEntity().
