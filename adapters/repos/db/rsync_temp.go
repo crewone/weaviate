@@ -81,6 +81,11 @@ func (r *rsync) PushShard(ctx context.Context, className string, desc *backup.Sh
 			return fmt.Errorf("create new shard on remote node %q: %w", node, err)
 		}
 
+		// simulate transferring large files (later have a sleep per file)
+		// fmt.Println("NATEE simulating large files, sleeping for 3 seconds")
+		// time.Sleep(3 * time.Second)
+		// fmt.Println("NATEE done sleeping for simulation of large files")
+
 		// Transfer each file that's part of the backup.
 		for _, file := range desc.Files {
 			err := r.PutFile(ctx, file, host, className, desc.Name)

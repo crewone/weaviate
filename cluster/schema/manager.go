@@ -393,7 +393,7 @@ func (s *SchemaManager) CopyShard(cmd *command.ApplyRequest, schemaOnly bool) er
 	if err := gproto.Unmarshal(cmd.SubCommand, req); err != nil {
 		return fmt.Errorf("%w: %w", ErrBadRequest, err)
 	}
-
+	fmt.Println("NATEE schemaManager copyShard", schemaOnly)
 	return s.apply(
 		applyOp{
 			op:           cmd.GetType().String(),

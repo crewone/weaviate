@@ -466,25 +466,40 @@ func (s *schema) updateTenantsProcess(class string, v uint64, req *command.Tenan
 }
 
 func (s *schema) copyShard(class string, v uint64, req *command.CopyShardRequest) error {
-	ok, meta, _, err := s.multiTenancyEnabled(class)
-	if !ok {
-		return err
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	meta := s.classes[class]
+	if meta == nil {
+		return ErrClassNotFound
 	}
 
+	// TODO replace sleeps with state machine
 	if s.nodeID == req.SourceNode {
-		// TODO copy logic from Scaler.scaleOut?
-		ssCopy := meta.Sharding.DeepCopy()
-		physical, ok := ssCopy.Physical[req.ShardName]
-		if !ok {
-			return fmt.Errorf("shard %q not found", req.ShardName)
-		}
-		// TODO simulate multistep with sleep for now?
-		physical.BelongsToNodes = append(physical.BelongsToNodes, req.TargetNode)
+		// fmt.Println("NATEE schema copyShard source node sleeping")
+		// time.Sleep(1 * time.Second)
+		fmt.Println("NATEE schema copyShard source node")
 	}
 	if s.nodeID == req.TargetNode {
-		// TODO
+		// TODO enable writes on target node
+		// fmt.Println("NATEE schema copyShard target node sleeping")
+		// time.Sleep(1 * time.Second)
+		fmt.Println("NATEE schema copyShard target node")
 	}
-	// TODO
+
+	ssCopy := meta.Sharding.DeepCopy()
+	physicalCopy, ok := ssCopy.Physical[req.ShardName]
+	if !ok {
+		return fmt.Errorf("shard %q not found", req.ShardName)
+	}
+	physicalCopy.BelongsToNodes = append(physicalCopy.BelongsToNodes, req.TargetNode)
+	// s.updateClass(class, func(meta *metaClass) error {
+	fmt.Println("NATEE schema copyShard update before", meta.Sharding.Physical[req.ShardName], meta.Class.ReplicationConfig)
+	meta.Sharding.Physical[req.ShardName] = physicalCopy
+	meta.Class.ReplicationConfig.Factor += 1
+	fmt.Println("NATEE schema copyShard update after", meta.Sharding.Physical[req.ShardName], meta.Class.ReplicationConfig)
+	return nil
+	// })
 
 	return nil
 }

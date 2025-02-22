@@ -15,6 +15,7 @@ function wait_weaviate() {
 }
 
 # Create logs directory if it doesn't exist (mv it if it does)
+rm -rf logs.bak
 mv logs logs.bak
 mkdir -p logs
 

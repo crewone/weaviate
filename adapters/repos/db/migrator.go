@@ -414,6 +414,13 @@ func (m *Migrator) NodeID(ctx context.Context) string {
 
 // NOTE copied from usecases/scaler
 func (m *Migrator) CopyShard(ctx context.Context, class string, shardName, sourceNode, targetNode string) error {
+	i := m.db.GetIndex(schema.ClassName(class))
+	fmt.Println("NATEE migrator copyShard rf before", i.Config.ReplicationFactor)
+	i.Config.ReplicationFactor += 1
+	fmt.Println("NATEE migrator copyShard rf after", i.Config.ReplicationFactor)
+	if m.nodeId != sourceNode {
+		return nil
+	}
 	bakID := fmt.Sprintf("_internal_scaler_%s", uuid.New().String()) // todo better name
 	bak, err := m.db.ShardsBackup(ctx, bakID, class, []string{shardName})
 	if err != nil {
@@ -431,7 +438,10 @@ func (m *Migrator) CopyShard(ctx context.Context, class string, shardName, sourc
 		// TODO is targetNode right?
 		shardName: []string{targetNode},
 	}
-	return rsync.Push(ctx, bak.Shards, dist, class, m.logger)
+	fmt.Println("NATEE migrator copyShard push", bak.Shards, dist, class)
+	r := rsync.Push(ctx, bak.Shards, dist, class, m.logger)
+	fmt.Println("NATEE migrator copyShard push err?", r)
+	return r
 }
 
 // UpdateTenants activates or deactivates tenant partitions and returns a commit func

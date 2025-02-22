@@ -221,7 +221,9 @@ func (s *schemaHandlers) copyShard(params schema.SchemaObjectsCopyshardParams,
 	principal *models.Principal,
 ) middleware.Responder {
 	ctx := restCtx.AddPrincipalToContext(params.HTTPRequest.Context(), principal)
+	fmt.Println("NATEE schemaHandlers.copyShard", params)
 	_, err := s.manager.CopyShard(ctx, principal, params.ClassName, params.ShardName, params.SourceNode, params.TargetNode)
+	fmt.Println("NATEE schemaHandlers.copyShard err?", err)
 	if err != nil {
 		s.metricRequestsTotal.logError(params.ClassName, err)
 		return schema.NewSchemaObjectsCopyshardUnprocessableEntity().
@@ -392,7 +394,8 @@ func setupSchemaHandlers(api *operations.WeaviateAPI, manager *schemaUC.Manager,
 		SchemaObjectsShardsGetHandlerFunc(h.getShardsStatus)
 	api.SchemaSchemaObjectsShardsUpdateHandler = schema.
 		SchemaObjectsShardsUpdateHandlerFunc(h.updateShardStatus)
-
+	api.SchemaSchemaObjectsCopyshardHandler = schema.
+		SchemaObjectsCopyshardHandlerFunc(h.copyShard)
 	api.SchemaTenantsCreateHandler = schema.TenantsCreateHandlerFunc(h.createTenants)
 	api.SchemaTenantsUpdateHandler = schema.TenantsUpdateHandlerFunc(h.updateTenants)
 	api.SchemaTenantsDeleteHandler = schema.TenantsDeleteHandlerFunc(h.deleteTenants)

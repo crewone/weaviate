@@ -142,6 +142,7 @@ func (ri *RemoteIndex) BatchPutObjects(ctx context.Context, shardName string,
 		return duplicateErr(fmt.Errorf("class %s has no physical shard %q: %w",
 			ri.class, shardName, err), len(objs))
 	}
+	fmt.Println("NATEE BatchPutObjects before", owner)
 
 	host, ok := ri.nodeResolver.NodeHostname(owner)
 	if !ok {
@@ -497,6 +498,7 @@ func (ri *RemoteIndex) queryReplicas(
 	do func(nodeName, host string) (interface{}, error),
 ) (resp interface{}, node string, err error) {
 	replicas, err := ri.stateGetter.ShardReplicas(ri.class, shard)
+	fmt.Println("NATEE queryReplicas", replicas)
 	if err != nil || len(replicas) == 0 {
 		return nil,
 			"",

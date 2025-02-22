@@ -770,6 +770,7 @@ func (i *Index) replicationEnabled() bool {
 	i.replicationConfigLock.RLock()
 	defer i.replicationConfigLock.RUnlock()
 
+	fmt.Println("NATEE replicationEnabled", i.Config.ReplicationFactor)
 	return i.Config.ReplicationFactor > 1
 }
 
@@ -871,6 +872,7 @@ func (i *Index) putObjectBatch(ctx context.Context, objects []*storobj.Object,
 		pos     []int
 	}
 	out := make([]error, len(objects))
+	fmt.Println("NATEE putObjectBatch check if replication is enabled", i.replicationEnabled(), replProps, i.Config.ReplicationFactor)
 	if i.replicationEnabled() && replProps == nil {
 		replProps = defaultConsistency()
 	}
@@ -932,6 +934,7 @@ func (i *Index) putObjectBatch(ctx context.Context, objects []*storobj.Object,
 			}()
 			var errs []error
 			if replProps != nil {
+				fmt.Println("NATEE putObjectBatch replprops NOT nil", shardName)
 				errs = i.replicator.PutObjects(ctx, shardName, group.objects,
 					replica.ConsistencyLevel(replProps.ConsistencyLevel), schemaVersion)
 			} else {
@@ -939,12 +942,14 @@ func (i *Index) putObjectBatch(ctx context.Context, objects []*storobj.Object,
 				if err != nil {
 					errs = []error{err}
 				} else if shard != nil {
+					fmt.Println("NATEE putObjectBatch replprops is nil and shard is NOT nil", shardName)
 					i.shardTransferMutex.RLockGuard(func() error {
 						defer release()
 						errs = shard.PutObjectBatch(ctx, group.objects)
 						return nil
 					})
 				} else {
+					fmt.Println("NATEE putObjectBatch replprops is nil and shard is nil", shardName)
 					errs = i.remote.BatchPutObjects(ctx, shardName, group.objects, schemaVersion)
 				}
 			}
@@ -1459,6 +1464,7 @@ func (i *Index) objectSearchByShard(ctx context.Context, limit int, filters *fil
 			}
 
 			if shard != nil {
+				fmt.Println("NATEE objectSearchByShard shard NOT nil", shardName)
 				defer release()
 				localCtx := helpers.InitSlowQueryDetails(ctx)
 				helpers.AnnotateSlowQueryLog(localCtx, "is_coordinator", true)
@@ -1470,6 +1476,7 @@ func (i *Index) objectSearchByShard(ctx context.Context, limit int, filters *fil
 				nodeName = i.getSchema.NodeName()
 
 			} else {
+				fmt.Println("NATEE objectSearchByShard shard is nil", shardName)
 				objs, scores, nodeName, err = i.remote.SearchShard(
 					ctx, shardName, nil, nil, limit, filters, keywordRanking,
 					sort, cursor, nil, addlProps, i.replicationEnabled(), nil, properties)

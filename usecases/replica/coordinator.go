@@ -181,6 +181,11 @@ func (c *coordinator[T]) Push(ctx context.Context,
 	com commitOp[T],
 ) (<-chan _Result[T], int, error) {
 	state, err := c.Resolver.State(c.Shard, cl, "")
+	names := []string{}
+	for name, _ := range state.NodeMap {
+		names = append(names, name)
+	}
+	fmt.Println("NATEE coordinator Push", names)
 	if err != nil {
 		return nil, 0, fmt.Errorf("%w : class %q shard %q", err, c.Class, c.Shard)
 	}
