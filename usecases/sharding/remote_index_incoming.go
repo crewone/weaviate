@@ -91,6 +91,7 @@ type RemoteIndexIncomingRepo interface {
 		filePath string) (io.WriteCloser, error)
 	IncomingCreateShard(ctx context.Context, className string, shardName string) error
 	IncomingReinitShard(ctx context.Context, shardName string) error
+	IncomingSetShardWriteOnly(shardName string, writeOnly bool) error
 }
 
 type RemoteIndexIncoming struct {
@@ -295,6 +296,7 @@ func (rii *RemoteIndexIncoming) CreateShard(ctx context.Context,
 	if index == nil {
 		return errors.Errorf("local index %q not found", indexName)
 	}
+	index.IncomingSetShardWriteOnly(shardName, true)
 
 	return index.IncomingCreateShard(ctx, indexName, shardName)
 }
@@ -306,6 +308,7 @@ func (rii *RemoteIndexIncoming) ReInitShard(ctx context.Context,
 	if index == nil {
 		return errors.Errorf("local index %q not found", indexName)
 	}
+	index.IncomingSetShardWriteOnly(shardName, false)
 
 	return index.IncomingReinitShard(ctx, shardName)
 }

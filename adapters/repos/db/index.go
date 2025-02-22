@@ -214,6 +214,17 @@ type Index struct {
 
 	closeLock sync.RWMutex
 	closed    bool
+
+	WriteOnlyShards map[string]struct{}
+}
+
+func (i *Index) IncomingSetShardWriteOnly(shardName string, writeOnly bool) error {
+	if writeOnly {
+		i.WriteOnlyShards[shardName] = struct{}{}
+	} else {
+		delete(i.WriteOnlyShards, shardName)
+	}
+	return nil
 }
 
 func (i *Index) ID() string {
@@ -271,6 +282,7 @@ func NewIndex(ctx context.Context, cfg IndexConfig,
 		indexCheckpoints:       indexCheckpoints,
 		allocChecker:           allocChecker,
 		shardCreateLocks:       esync.NewKeyLocker(),
+		WriteOnlyShards:        make(map[string]struct{}),
 	}
 
 	getDeletionStrategy := func() string {
@@ -1464,8 +1476,12 @@ func (i *Index) objectSearchByShard(ctx context.Context, limit int, filters *fil
 			}
 
 			if shard != nil {
-				fmt.Println(time.Now().Format("15:04:05.000"), "NATEE objectSearchByShard shard NOT nil", shardName)
 				defer release()
+			}
+			_, shardIsWriteOnly := i.WriteOnlyShards[shardName]
+			fmt.Println("NATEE shardIsWriteOnly", shardIsWriteOnly)
+			if shard != nil && !shardIsWriteOnly {
+				fmt.Println(time.Now().Format("15:04:05.000"), "NATEE objectSearchByShard shard NOT nil and NOT write only", shardName, shardIsWriteOnly)
 				localCtx := helpers.InitSlowQueryDetails(ctx)
 				helpers.AnnotateSlowQueryLog(localCtx, "is_coordinator", true)
 				objs, scores, err = shard.ObjectSearch(localCtx, limit, filters, keywordRanking, sort, cursor, addlProps, properties)
@@ -1476,7 +1492,7 @@ func (i *Index) objectSearchByShard(ctx context.Context, limit int, filters *fil
 				nodeName = i.getSchema.NodeName()
 
 			} else {
-				fmt.Println(time.Now().Format("15:04:05.000"), "NATEE objectSearchByShard shard is nil", shardName)
+				fmt.Println(time.Now().Format("15:04:05.000"), "NATEE objectSearchByShard shard is nil or write only", shardName, shardIsWriteOnly)
 				objs, scores, nodeName, err = i.remote.SearchShard(
 					ctx, shardName, nil, nil, limit, filters, keywordRanking,
 					sort, cursor, nil, addlProps, i.replicationEnabled(), nil, properties)

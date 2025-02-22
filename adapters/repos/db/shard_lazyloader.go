@@ -57,6 +57,14 @@ type LazyLoadShard struct {
 	memMonitor memwatch.AllocChecker
 }
 
+// func (l *LazyLoadShard) SetMyWriteOnly(myWriteOnly bool) {
+// 	l.shard.SetMyWriteOnly(myWriteOnly)
+// }
+
+// func (l *LazyLoadShard) GetMyWriteOnly() bool {
+// 	return l.shard.GetMyWriteOnly()
+// }
+
 func NewLazyLoadShard(ctx context.Context, promMetrics *monitoring.PrometheusMetrics,
 	shardName string, index *Index, class *models.Class, jobQueueCh chan job,
 	indexCheckpoints *indexcheckpoint.Checkpoints, memMonitor memwatch.AllocChecker,

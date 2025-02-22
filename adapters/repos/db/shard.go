@@ -169,6 +169,9 @@ type ShardLike interface {
 	// Debug methods
 	DebugResetVectorIndex(ctx context.Context, targetVector string) error
 	RepairIndex(ctx context.Context, targetVector string) error
+
+	// SetMyWriteOnly(myWriteOnly bool)
+	// GetMyWriteOnly() bool
 }
 
 // Shard is the smallest completely-contained index unit. A shard manages
@@ -243,7 +246,20 @@ type Shard struct {
 	inUseCounter atomic.Int64
 	// allows concurrent shut read/write
 	shutdownLock *sync.RWMutex
+
+	// // myWriteOnly is a test to see if we make shards write only while
+	// // they're being copied if we can avoid reading from them until
+	// // the copy is complete
+	// myWriteOnly bool
 }
+
+// func (s *Shard) SetMyWriteOnly(myWriteOnly bool) {
+// 	s.myWriteOnly = myWriteOnly
+// }
+
+// func (s *Shard) GetMyWriteOnly() bool {
+// 	return s.myWriteOnly
+// }
 
 func (s *Shard) ID() string {
 	return shardId(s.index.ID(), s.name)
