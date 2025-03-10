@@ -475,6 +475,14 @@ func FromEnv(config *Config) error {
 		config.MaximumConcurrentGetRequests = DefaultMaxConcurrentGetRequests
 	}
 
+	if err = parsePositiveInt(
+		"MAXIMUM_CONCURRENT_SHARD_LOADS",
+		func(val int) { config.MaximumConcurrentShardLoads = val },
+		DefaultMaxConcurrentShardLoads,
+	); err != nil {
+		return err
+	}
+
 	if err := parsePositiveInt(
 		"GRPC_MAX_MESSAGE_SIZE",
 		func(val int) { config.GRPC.MaxMsgSize = val },
@@ -523,6 +531,14 @@ func FromEnv(config *Config) error {
 
 	if entcfg.Enabled(os.Getenv("HNSW_STARTUP_WAIT_FOR_VECTOR_CACHE")) {
 		config.HNSWStartupWaitForVectorCache = true
+	}
+
+	if err := parseInt(
+		"MAXIMUM_ALLOWED_COLLECTIONS_COUNT",
+		func(val int) { config.MaximumAllowedCollectionsCount = val },
+		DefaultMaximumAllowedCollectionsCount,
+	); err != nil {
+		return err
 	}
 
 	// explicitly reset sentry config
@@ -869,9 +885,11 @@ const (
 	DefaultPersistenceMemtablesMinDuration     = 15
 	DefaultPersistenceMemtablesMaxDuration     = 45
 	DefaultMaxConcurrentGetRequests            = 0
+	DefaultMaxConcurrentShardLoads             = 500
 	DefaultGRPCPort                            = 50051
 	DefaultGRPCMaxMsgSize                      = 104858000 // 100 * 1024 * 1024 + 400
 	DefaultMinimumReplicationFactor            = 1
+	DefaultMaximumAllowedCollectionsCount      = -1 // unlimited
 )
 
 const VectorizerModuleNone = "none"

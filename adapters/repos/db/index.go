@@ -159,17 +159,18 @@ func (m *shardMap) LoadAndDelete(name string) (ShardLike, bool) {
 // class. An index can be further broken up into self-contained units, called
 // Shards, to allow for easy distribution across Nodes
 type Index struct {
-	classSearcher             inverted.ClassSearcher // to allow for nested by-references searches
-	shards                    shardMap
-	Config                    IndexConfig
-	vectorIndexUserConfig     schemaConfig.VectorIndexConfig
+	classSearcher inverted.ClassSearcher // to allow for nested by-references searches
+	shards        shardMap
+	Config        IndexConfig
+	getSchema     schemaUC.SchemaGetter
+	logger        logrus.FieldLogger
+	remote        *sharding.RemoteIndex
+	stopwords     *stopwords.Detector
+	replicator    *replica.Replicator
+
 	vectorIndexUserConfigLock sync.Mutex
+	vectorIndexUserConfig     schemaConfig.VectorIndexConfig
 	vectorIndexUserConfigs    map[string]schemaConfig.VectorIndexConfig
-	getSchema                 schemaUC.SchemaGetter
-	logger                    logrus.FieldLogger
-	remote                    *sharding.RemoteIndex
-	stopwords                 *stopwords.Detector
-	replicator                *replica.Replicator
 
 	partitioningEnabled bool
 
@@ -211,6 +212,8 @@ type Index struct {
 	shardCreateLocks *esync.KeyLocker
 
 	replicationConfigLock sync.RWMutex
+
+	shardLoadLimiter ShardLoadLimiter
 
 	closeLock sync.RWMutex
 	closed    bool
@@ -271,6 +274,7 @@ func NewIndex(ctx context.Context, cfg IndexConfig,
 		indexCheckpoints:       indexCheckpoints,
 		allocChecker:           allocChecker,
 		shardCreateLocks:       esync.NewKeyLocker(),
+		shardLoadLimiter:       cfg.ShardLoadLimiter,
 	}
 
 	getDeletionStrategy := func() string {
@@ -321,6 +325,11 @@ func (i *Index) initAndStoreShards(ctx context.Context, class *models.Class,
 
 			shardName := shardName // prevent loop variable capture
 			eg.Go(func() error {
+				if err := i.shardLoadLimiter.Acquire(ctx); err != nil {
+					return fmt.Errorf("acquiring permit to load shard: %w", err)
+				}
+				defer i.shardLoadLimiter.Release()
+
 				shard, err := NewShard(ctx, promMetrics, shardName, i, class, i.centralJobQueue, i.scheduler, i.indexCheckpoints)
 				if err != nil {
 					return fmt.Errorf("init shard %s of index %s: %w", shardName, i.ID(), err)
@@ -350,7 +359,7 @@ func (i *Index) initAndStoreShards(ctx context.Context, class *models.Class,
 			continue
 		}
 
-		shard := NewLazyLoadShard(ctx, promMetrics, shardName, i, class, i.centralJobQueue, i.indexCheckpoints, i.allocChecker)
+		shard := NewLazyLoadShard(ctx, promMetrics, shardName, i, class, i.centralJobQueue, i.indexCheckpoints, i.allocChecker, i.shardLoadLimiter)
 		i.shards.Store(shardName, shard)
 	}
 
@@ -433,6 +442,11 @@ func (i *Index) initShard(ctx context.Context, shardName string, class *models.C
 			return nil, errors.Wrap(err, "memory pressure: cannot init shard")
 		}
 
+		if err := i.shardLoadLimiter.Acquire(ctx); err != nil {
+			return nil, fmt.Errorf("acquiring permit to load shard: %w", err)
+		}
+		defer i.shardLoadLimiter.Release()
+
 		shard, err := NewShard(ctx, promMetrics, shardName, i, class, i.centralJobQueue, i.scheduler, i.indexCheckpoints)
 		if err != nil {
 			return nil, fmt.Errorf("init shard %s of index %s: %w", shardName, i.ID(), err)
@@ -441,7 +455,7 @@ func (i *Index) initShard(ctx context.Context, shardName string, class *models.C
 		return shard, nil
 	}
 
-	shard := NewLazyLoadShard(ctx, promMetrics, shardName, i, class, i.centralJobQueue, i.indexCheckpoints, i.allocChecker)
+	shard := NewLazyLoadShard(ctx, promMetrics, shardName, i, class, i.centralJobQueue, i.indexCheckpoints, i.allocChecker, i.shardLoadLimiter)
 	return shard, nil
 }
 
@@ -638,6 +652,7 @@ type IndexConfig struct {
 	ForceFullReplicasSearch             bool
 	LSMEnableSegmentsChecksumValidation bool
 	TrackVectorDimensions               bool
+	ShardLoadLimiter                    ShardLoadLimiter
 }
 
 func indexID(class schema.ClassName) string {
@@ -2396,13 +2411,10 @@ func (i *Index) getShardsQueueSize(ctx context.Context, tenant string) (map[stri
 			if shard != nil {
 				func() {
 					defer release()
-					if shard.hasTargetVectors() {
-						for _, queue := range shard.Queues() {
-							size += queue.Size()
-						}
-					} else {
-						size = shard.Queue().Size()
-					}
+					_ = shard.ForEachVectorQueue(func(_ string, queue *VectorIndexQueue) error {
+						size += queue.Size()
+						return nil
+					})
 				}()
 			} else {
 				size, err = i.remote.GetShardQueueSize(ctx, shardName)
@@ -2429,13 +2441,11 @@ func (i *Index) IncomingGetShardQueueSize(ctx context.Context, shardName string)
 	if shard.GetStatus() == storagestate.StatusLoading {
 		return 0, enterrors.NewErrUnprocessable(fmt.Errorf("local %s shard is not ready", shardName))
 	}
-	if !shard.hasTargetVectors() {
-		return shard.Queue().Size(), nil
-	}
-	size := int64(0)
-	for _, queue := range shard.Queues() {
+	var size int64
+	_ = shard.ForEachVectorQueue(func(_ string, queue *VectorIndexQueue) error {
 		size += queue.Size()
-	}
+		return nil
+	})
 	return size, nil
 }
 
@@ -2689,6 +2699,38 @@ func (i *Index) validateMultiTenancy(tenant string) error {
 		)
 	}
 	return nil
+}
+
+// GetVectorIndexConfig returns a vector index configuration associated with targetVector.
+// In case targetVector is empty string, legacy vector configuration is returned.
+// Method expects that configuration associated with targetVector is present.
+func (i *Index) GetVectorIndexConfig(targetVector string) schemaConfig.VectorIndexConfig {
+	i.vectorIndexUserConfigLock.Lock()
+	defer i.vectorIndexUserConfigLock.Unlock()
+
+	if targetVector == "" {
+		return i.vectorIndexUserConfig
+	}
+
+	return i.vectorIndexUserConfigs[targetVector]
+}
+
+// GetVectorIndexConfigs returns a map of vector index configurations.
+// If present, legacy vector is return under the key of empty string.
+func (i *Index) GetVectorIndexConfigs() map[string]schemaConfig.VectorIndexConfig {
+	i.vectorIndexUserConfigLock.Lock()
+	defer i.vectorIndexUserConfigLock.Unlock()
+
+	configs := make(map[string]schemaConfig.VectorIndexConfig, len(i.vectorIndexUserConfigs)+1)
+	for k, v := range i.vectorIndexUserConfigs {
+		configs[k] = v
+	}
+
+	if i.vectorIndexUserConfig != nil {
+		configs[""] = i.vectorIndexUserConfig
+	}
+
+	return configs
 }
 
 func convertToVectorIndexConfig(config interface{}) schemaConfig.VectorIndexConfig {

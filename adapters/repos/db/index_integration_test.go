@@ -39,6 +39,7 @@ import (
 	"github.com/weaviate/weaviate/entities/storobj"
 	"github.com/weaviate/weaviate/entities/vectorindex/flat"
 	"github.com/weaviate/weaviate/entities/vectorindex/hnsw"
+	"github.com/weaviate/weaviate/usecases/monitoring"
 )
 
 func TestIndex_DropIndex(t *testing.T) {
@@ -119,6 +120,7 @@ func TestIndex_DropWithDataAndRecreateWithDataIndex(t *testing.T) {
 		RootPath:          dirName,
 		ClassName:         schema.ClassName(class.Class),
 		ReplicationFactor: 1,
+		ShardLoadLimiter:  NewShardLoadLimiter(monitoring.NoopRegisterer, 1),
 	}, shardState, inverted.ConfigFromModel(class.InvertedIndexConfig),
 		hnsw.NewDefaultUserConfig(), nil, &fakeSchemaGetter{
 			schema: fakeSchema, shardState: shardState,
@@ -177,6 +179,7 @@ func TestIndex_DropWithDataAndRecreateWithDataIndex(t *testing.T) {
 		RootPath:          dirName,
 		ClassName:         schema.ClassName(class.Class),
 		ReplicationFactor: 1,
+		ShardLoadLimiter:  NewShardLoadLimiter(monitoring.NoopRegisterer, 1),
 	}, shardState, inverted.ConfigFromModel(class.InvertedIndexConfig),
 		hnsw.NewDefaultUserConfig(), nil, &fakeSchemaGetter{
 			schema:     fakeSchema,
@@ -224,13 +227,13 @@ func TestIndex_DropWithDataAndRecreateWithDataIndex(t *testing.T) {
 	require.Nil(t, err)
 
 	// update the index vectorIndexUserConfig
-	beforeVectorConfig, ok := index.vectorIndexUserConfig.(hnsw.UserConfig)
+	beforeVectorConfig, ok := index.GetVectorIndexConfig("").(hnsw.UserConfig)
 	require.Equal(t, -1, beforeVectorConfig.EF)
 	require.True(t, ok)
 	beforeVectorConfig.EF = 99
 	err = index.updateVectorIndexConfig(context.TODO(), beforeVectorConfig)
 	require.Nil(t, err)
-	afterVectorConfig, ok := index.vectorIndexUserConfig.(hnsw.UserConfig)
+	afterVectorConfig, ok := index.GetVectorIndexConfig("").(hnsw.UserConfig)
 	require.True(t, ok)
 	require.Equal(t, 99, afterVectorConfig.EF)
 
@@ -290,6 +293,7 @@ func TestIndex_DropReadOnlyIndexWithData(t *testing.T) {
 		RootPath:          dirName,
 		ClassName:         schema.ClassName(class.Class),
 		ReplicationFactor: 1,
+		ShardLoadLimiter:  NewShardLoadLimiter(monitoring.NoopRegisterer, 1),
 	}, shardState, inverted.ConfigFromModel(class.InvertedIndexConfig),
 		hnsw.NewDefaultUserConfig(), nil, &fakeSchemaGetter{
 			schema: fakeSchema, shardState: shardState,
@@ -445,6 +449,7 @@ func TestIndex_DropLoadedShard(t *testing.T) {
 		RootPath:          dirName,
 		ClassName:         schema.ClassName(class.Class),
 		ReplicationFactor: 1,
+		ShardLoadLimiter:  NewShardLoadLimiter(monitoring.NoopRegisterer, 1),
 	}, shardState, inverted.ConfigFromModel(class.InvertedIndexConfig),
 		hnsw.NewDefaultUserConfig(), nil, &fakeSchemaGetter{
 			schema: fakeSchema, shardState: shardState,
@@ -503,23 +508,13 @@ func emptyIdx(t *testing.T, rootDir string, class *models.Class) *Index {
 		ClassName:             schema.ClassName(class.Class),
 		DisableLazyLoadShards: true,
 		ReplicationFactor:     1,
+		ShardLoadLimiter:      NewShardLoadLimiter(monitoring.NoopRegisterer, 1),
 	}, shardState, inverted.ConfigFromModel(invertedConfig()),
 		hnsw.NewDefaultUserConfig(), nil, &fakeSchemaGetter{
 			shardState: shardState,
 		}, nil, logger, nil, nil, nil, nil, class, nil, scheduler, nil, nil)
 	require.Nil(t, err)
 	return idx
-}
-
-func invertedConfig() *models.InvertedIndexConfig {
-	return &models.InvertedIndexConfig{
-		CleanupIntervalSeconds: 60,
-		Stopwords: &models.StopwordConfig{
-			Preset: "none",
-		},
-		IndexNullState:      true,
-		IndexPropertyLength: true,
-	}
 }
 
 func getIndexFilenames(rootDir, indexName string) ([]string, error) {
@@ -566,6 +561,7 @@ func TestIndex_DebugResetVectorIndex(t *testing.T) {
 	var objs []*storobj.Object
 	for i := 0; i < amount; i++ {
 		obj := testObject("reindextest")
+		obj.Vector = randVector(3)
 		objs = append(objs, obj)
 	}
 
@@ -627,7 +623,7 @@ func TestIndex_DebugResetVectorIndexTargetVector(t *testing.T) {
 		t,
 		ctx,
 		&models.Class{Class: class.Class},
-		hnsw.UserConfig{},
+		nil,
 		false,
 		true,
 		func(i *Index) {
