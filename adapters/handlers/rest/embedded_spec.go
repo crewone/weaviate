@@ -6580,6 +6580,24 @@ func init() {
         "Path": {
           "description": "Path within the bucket",
           "type": "string"
+        },
+        "rolesOptions": {
+          "description": "How roles should be restored",
+          "type": "string",
+          "default": "all",
+          "enum": [
+            "noRestore",
+            "all"
+          ]
+        },
+        "usersOptions": {
+          "description": "How users should be restored",
+          "type": "string",
+          "default": "all",
+          "enum": [
+            "noRestore",
+            "all"
+          ]
         }
       }
     },
@@ -14226,6 +14244,24 @@ func init() {
         "Path": {
           "description": "Path within the bucket",
           "type": "string"
+        },
+        "rolesOptions": {
+          "description": "How roles should be restored",
+          "type": "string",
+          "default": "all",
+          "enum": [
+            "noRestore",
+            "all"
+          ]
+        },
+        "usersOptions": {
+          "description": "How users should be restored",
+          "type": "string",
+          "default": "all",
+          "enum": [
+            "noRestore",
+            "all"
+          ]
         }
       }
     },
