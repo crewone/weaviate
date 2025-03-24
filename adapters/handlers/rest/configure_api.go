@@ -551,7 +551,7 @@ func MakeAppState(ctx context.Context, options *swag.CommandLineOptionsGroup) *s
 	appState.RemoteReplicaIncoming = replica.NewRemoteReplicaIncoming(repo, appState.ClusterService.SchemaReader())
 
 	backupManager := backup.NewHandler(appState.Logger, appState.Authorizer,
-		schemaManager, repo, appState.Modules, appState.RBAC.BackupLocations())
+		schemaManager, repo, appState.Modules, appState.RBAC.BackupLocations(), appState.APIKey.Dynamic.BackupLocations())
 	appState.BackupManager = backupManager
 
 	enterrors.GoWrapper(func() { clusterapi.Serve(appState) }, appState.Logger)
